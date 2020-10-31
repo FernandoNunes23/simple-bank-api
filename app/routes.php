@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use App\Application\Actions\User\ListUsersAction;
-use App\Application\Actions\User\ViewUserAction;
+use App\Application\Actions\Account\AccountDepositAction;
+use App\Application\Actions\Reset\ResetAction;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
-use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -14,24 +13,9 @@ return function (App $app) {
         return $response;
     });
 
-    $app->get('/balance', function (Request $request, Response $response) {
-        $response->getBody()->write('OK');
-        return $response;
-    });
+    $app->get('/balance', AccountBa);
 
-    $app->get('/post', function (Request $request, Response $response) {
-        $response->getBody()->write('OK');
-        return $response;
-    });
+    $app->post('/event', AccountDepositAction::class);
 
-    $app->post('/reset', function (Request $request, Response $response) {
-        $response->getBody()->write('OK');
-        return $response;
-    });
-
-    /** SKELETON EXAMPLE */
-    $app->group('/users', function (Group $group) {
-        $group->get('', ListUsersAction::class);
-        $group->get('/{id}', ViewUserAction::class);
-    });
+    $app->post('/reset', ResetAction::class);
 };

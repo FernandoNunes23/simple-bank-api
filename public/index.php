@@ -63,6 +63,9 @@ register_shutdown_function($shutdownHandler);
 // Add Routing Middleware
 $app->addRoutingMiddleware();
 
+// Parse json, form data and xml
+$app->addBodyParsingMiddleware();
+
 // Add Error Middleware
 $errorMiddleware = $app->addErrorMiddleware($displayErrorDetails, false, false);
 $errorMiddleware->setDefaultErrorHandler($errorHandler);
