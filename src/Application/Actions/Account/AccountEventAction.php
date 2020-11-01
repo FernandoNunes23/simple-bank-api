@@ -3,17 +3,31 @@
 
 namespace App\Application\Actions\Account;
 
-
-use App\Domain\Entity\Account;
+use App\Domain\Entity\Factory\AccountEntityFactory;
+use App\Domain\Persister\AccountPersister;
+use App\Domain\Repository\AccountRepository;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 
 class AccountEventAction extends AccountAction
 {
 
-    const DEPOSIT_RESPONSE_WRAPPER = "destination";
-    const WITHDRAW_RESPONSE_WRAPPER = "origin";
-    const TRANSFER_RESPONSE_WRAPPER = "origin";
+    /**
+     * @var AccountEntityFactory
+     */
+    private $accountEntityFactory;
+
+    public function __construct(
+        LoggerInterface $logger,
+        AccountRepository $accountRepository,
+        AccountPersister $accountPersister,
+        AccountEntityFactory $accountEntityFactory
+    )
+    {
+        parent::__construct($logger, $accountRepository, $accountPersister);
+        $this->accountEntityFactory = $accountEntityFactory;
+    }
 
     /**
      * @return Response
@@ -30,14 +44,37 @@ class AccountEventAction extends AccountAction
             return $this->withdraw($data);
         }
 
-        if ($data["type"] == "withdraw") {
+        if ($data["type"] == "transfer") {
             return $this->transfer($data);
         }
     }
 
     private function transfer(array $data): Response
     {
-        return $this->respondWithData(null,200);
+        $originId = $data["origin"];
+        $value = $data["amount"];
+        $destinationId = $data["destination"];
+
+        $originAccount = $this->accountRepository->find($originId);
+        $destinationAccount = $this->accountRepository->find($destinationId);
+
+        if ($originAccount == null) {
+            return $this->respondNotFound();
+        }
+
+        if ($destinationAccount == null) {
+            return $this->respondNotFound();
+        }
+
+        $destinationAccount = $originAccount->transfer($value, $destinationAccount);
+
+        $this->accountPersister->persist($originAccount);
+        $this->accountPersister->persist($destinationAccount);
+
+        $responseData["origin"] = $originAccount->jsonSerialize();
+        $responseData["destination"] = $destinationAccount->jsonSerialize();
+
+        return $this->respondWithData($responseData,201);
     }
 
     private function withdraw(array $data): Response
@@ -48,17 +85,15 @@ class AccountEventAction extends AccountAction
         $account = $this->accountRepository->find($id);
 
         if ($account == null) {
-            return $this->respondWithData(null,404);
+            return $this->respondNotFound();
         }
 
-        try {
-            $account->withdraw($value);
-            $account = $this->accountPersister->persist($account);
+        $account->withdraw($value);
+        $account = $this->accountPersister->persist($account);
 
-            return $this->respondWithData($account, 201, AccountEventAction::WITHDRAW_RESPONSE_WRAPPER);
-        } catch (\Exception $e) {
-            return $this->respondWithData(null,500);
-        }
+        $responseData["origin"] = $account->jsonSerialize();
+
+        return $this->respondWithData($responseData, 201);
     }
 
     private function deposit(array $data): Response
@@ -69,14 +104,15 @@ class AccountEventAction extends AccountAction
         $account = $this->accountRepository->find($id);
 
         if ($account == null) {
-            // TODO: Criar AccountFactory
-            $account = new Account($id, $value);
+            $account = $this->accountEntityFactory->createAccount($id, $value);
         } else {
             $account->deposit($value);
         }
 
         $account = $this->accountPersister->persist($account);
 
-        return $this->respondWithData($account, 201, AccountEventAction::DEPOSIT_RESPONSE_WRAPPER);
+        $responseData["destination"] = $account->jsonSerialize();
+
+        return $this->respondWithData($responseData, 201);
     }
 }

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Application\Actions;
 
-use App\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -101,9 +100,9 @@ abstract class Action
      * @param  array|object|null $data
      * @return Response
      */
-    protected function respondWithData($data = null, int $statusCode = 200, string $responseWrapper = null): Response
+    protected function respondWithData($data = null, int $statusCode = 200): Response
     {
-        $payload = new ActionPayload($statusCode, $data, $responseWrapper);
+        $payload = new ActionPayload($statusCode, $data);
 
         return $this->respond($payload);
     }
@@ -114,11 +113,43 @@ abstract class Action
      */
     protected function respond(ActionPayload $payload): Response
     {
-        $json = json_encode($payload, JSON_PRETTY_PRINT);
+        $json = json_encode($payload);
+
+        $json = $this->formatJson($json);
+
         $this->response->getBody()->write($json);
 
         return $this->response
                     ->withHeader('Content-Type', 'application/json')
                     ->withStatus($payload->getStatusCode());
+    }
+
+    /**
+     * Formata o JSON para o padrão de saída necessário
+     *
+     * @param string $json
+     * @return string|string[]|null
+     */
+    protected function formatJson(string $json)
+    {
+        $json = preg_replace('/,/', '$0 ', $json);
+
+        return $json;
+    }
+
+    protected function respondOk(string $message = "OK")
+    {
+        $this->response->getBody()->write($message);
+
+        return $this->response
+            ->withStatus(200);
+    }
+
+    protected function respondNotFound()
+    {
+        $this->response->getBody()->write("0");
+
+        return $this->response
+            ->withStatus(404);
     }
 }

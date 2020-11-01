@@ -17,32 +17,67 @@ class Account implements JsonSerializable
      */
     private $balance;
 
-    public function __construct(?int $id, float $balance)
+    /**
+     * Account constructor.
+     *
+     * @param string|null $id
+     * @param float $balance
+     */
+    public function __construct(?string $id, float $balance)
     {
         $this->id = $id;
         $this->balance = $balance;
     }
 
+    /**
+     * @return string|null
+     */
     public function getId()
     {
         return $this->id;
     }
 
+    /**
+     * @return float
+     */
     public function getBalance()
     {
         return $this->balance;
     }
 
+    /**
+     * Método responsável por depositar valores na conta
+     *
+     * @param float $value
+     */
     public function deposit(float $value)
     {
         $this->balance += $value;
     }
 
+    /**
+     * Método responsável por sacar valores da conta
+     *
+     * @param float $value
+     * @throws \Exception
+     */
     public function withdraw(float $value)
     {
+        if ($value > $this->balance) {
+            throw new \Exception("Valor solicitado para saque é maior que o valor disponível na conta.");
+        }
+
         $this->balance -= $value;
     }
 
+    /**
+     * Método responsável por transferir valores entre contas
+     *
+     * @param float $value
+     * @param Account $receiverAccount
+     * @return Account
+     * @throws \Exception
+     */
     public function transfer(float $value, Account $receiverAccount)
     {
         $this->withdraw($value);
@@ -57,7 +92,7 @@ class Account implements JsonSerializable
     public function jsonSerialize()
     {
         return [
-            "id"      => $this->id,
+            "id"      => (string) $this->id,
             "balance" => $this->balance
         ];
     }

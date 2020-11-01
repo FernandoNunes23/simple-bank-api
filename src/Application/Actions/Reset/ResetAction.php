@@ -4,26 +4,63 @@
 namespace App\Application\Actions\Reset;
 
 
+use App\Application\Actions\Action;
+use App\Domain\DomainException\DomainRecordNotFoundException;
+use App\Domain\Entity\Factory\AccountEntityFactory;
+use App\Domain\Persister\AccountPersister;
 use App\Infrastructure\Persistence\CachePersistence;
 use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 
-class ResetAction
+class ResetAction extends Action
 {
-    private $request;
-    private $response;
+    /**
+     * @var CachePersistence
+     */
     private $persistence;
 
-    public function __invoke(Request $request, Response $response, $args): Response
-    {
-        $this->request = $request;
-        $this->response = $response;
+    /**
+     * @var AccountEntityFactory
+     */
+    private $accountEntityFactory;
 
-        $this->action();
+    /**
+     * @var AccountPersister
+     */
+    private $accountPersister;
+
+    /**
+     * ResetAction constructor.
+     *
+     * @param LoggerInterface $logger
+     * @param CachePersistence $persistence
+     * @param AccountEntityFactory $accountEntityFactory
+     * @param AccountPersister $accountPersister
+     */
+    public function __construct(
+        LoggerInterface $logger,
+        CachePersistence $persistence,
+        AccountEntityFactory $accountEntityFactory,
+        AccountPersister $accountPersister
+    )
+    {
+        parent::__construct($logger);
+
+        $this->persistence          = $persistence;
+        $this->accountEntityFactory = $accountEntityFactory;
+        $this->accountPersister     = $accountPersister;
     }
 
-    private function action()
+    /**
+     * @return Response
+     */
+    protected function action(): Response
     {
-        //$this->persistence->clearAll();
+        $this->persistence->clearAll();
+
+        $account = $this->accountEntityFactory->createAccount("300", 0);
+        $this->accountPersister->persist($account);
+
+        return $this->respondOk();
     }
 }
