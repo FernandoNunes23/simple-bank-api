@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use App\Application\Actions\Account\AccountDepositAction;
+use App\Application\Actions\Account\AccountEventAction;
+use App\Application\Actions\Account\AccountGetBalanceAction;
 use App\Application\Actions\Reset\ResetAction;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -13,9 +14,9 @@ return function (App $app) {
         return $response;
     });
 
-    $app->get('/balance', AccountBa);
+    $app->get('/balance', AccountGetBalanceAction::class);
 
-    $app->post('/event', AccountDepositAction::class);
+    $app->post('/event', AccountEventAction::class);
 
     $app->post('/reset', ResetAction::class);
 };
