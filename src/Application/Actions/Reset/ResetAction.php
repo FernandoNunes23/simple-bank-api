@@ -56,9 +56,13 @@ class ResetAction extends Action
      */
     protected function action(): Response
     {
+        $this->logger->info("Iniciando processo de limpeza das informações");
         $this->persistence->clearAll();
 
+        $this->logger->info("Criando a conta padrão para testes");
         $account = $this->accountEntityFactory->createAccount("300", 0);
+
+        $this->logger->info("Persistindo as informações da conta para testes");
         $this->accountPersister->persist($account);
 
         return $this->respondOk();

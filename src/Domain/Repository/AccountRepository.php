@@ -15,7 +15,7 @@ class AccountRepository
         $this->persistence = $persistence;
     }
 
-    public function find(int $id)
+    public function find(string $id)
     {
         return $this->persistence->get($id);
     }
