@@ -64,7 +64,7 @@ class Account implements JsonSerializable
     public function withdraw(float $value)
     {
         if ($value > $this->balance) {
-            throw new \Exception("Valor solicitado para saque é maior que o valor disponível na conta.");
+            throw new \Exception("Valor solicitado para operação é maior que o valor disponível na conta.");
         }
 
         $this->balance -= $value;
@@ -76,6 +76,7 @@ class Account implements JsonSerializable
      * @param float $value
      * @param Account $receiverAccount
      * @return Account
+     *
      * @throws \Exception
      */
     public function transfer(float $value, Account $receiverAccount)
